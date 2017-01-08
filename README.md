@@ -10,6 +10,8 @@ a telegram bot
 * /abortgame aborts the current game
 * /togglegames toggles games off or on
 * /points shows points of user in current chat
+* /addcomm command:return adds a custom command
+* /remcomm command removes a custom command
 
 ###other repos used 
 * [telepot](https://github.com/nickoala/telepot/)
