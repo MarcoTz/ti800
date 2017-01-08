@@ -11,4 +11,6 @@ a telegram bot
 * /togglegames toggles games off or on
 * /points shows points of user in current chat
 
-uses [telepot](https://github.com/nickoala/telepot/)
+###other repos used 
+* [telepot](https://github.com/nickoala/telepot/)
+* [google-10000-english](https://github.com/first20hours/google-10000-english/)
