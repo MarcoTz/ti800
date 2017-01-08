@@ -70,7 +70,7 @@ def check_command(msg):
 
 		if msg['text'].split(' ')[0] == '/callme':
 			CALLME[str(msg['from']['id'])] = msg['text'].split(' ',1)[1]
-			BOT.sendMessage(msg['chat']['id'],msg['from']['first_name']+'I will now call you'+CALLME[msg['from']['id']])
+			BOT.sendMessage(msg['chat']['id'],msg['from']['first_name']+',I will now call you '+CALLME[str(msg['from']['id'])])
 	
 		if msg['text'].split(' ')[0] == '/addcomm':	
 			try:
