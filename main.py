@@ -17,11 +17,11 @@ TYPE_WORDS = dictionary['words']
 TABOO_WORDS = dictionary['words']
 TABOO_TABOOS = {}
 POINTS = CONF['POINTS']
+COMMANDS = CONF['COMMANDS']
 
 f.close() 
  
 def check_command(msg):
-	print(msg)
 	try:
 		split = msg['text'].split('@')
 		try:	
@@ -62,9 +62,60 @@ def check_command(msg):
 				del GAMES_OFF[GAMES_OFF.index(msg['chat']['id'])]
 
 		if msg['text'] == '/points':
-				show_points(msg)
+			show_points(msg)
+			
+		if msg['text'] == '/help':
+			send_help(msg)
+	
+		if msg['text'].split(' ')[0] == '/addcomm':	
+			try:
+				comm = msg['text'].split(' ',1)[1]
+				comm = comm.split(':')
+				print(comm[1])
+				try:
+					COMMANDS[str(msg['chat']['id'])][comm[0]] = comm[1]
+				except KeyError:
+					COMMANDS[str(msg['chat']['id'])] = {}
+					COMMANDS[str(msg['chat']['id'])][comm[0]] = comm[1]
+				BOT.sendMessage(msg['chat']['id'],'Added command '+comm[0]+':'+comm[1])
+			except IndexError:
+				BOT.sendMessage(msg['chat']['id'],'Malformed command. Send /help for more information')
+
+		if msg['text'].split(' ')[0] == '/remcomm':
+			comm = msg['text'].split(' ')
+			if comm[1] in COMMANDS[str(msg['chat']['id'])]:
+				del COMMANDS[str(msg['chat']['id'])][comm[1]]
+				BOT.sendMessage(msg['chat']['id'],'Command '+comm[1]+' has been deleted')
+			else:
+				BOT.sendMessage(msg['chat']['id'],'Not a command.')
+
+		if msg['text'] in COMMANDS[str(msg['chat']['id'])]:
+			BOT.sendMessage(msg['chat']['id'],COMMANDS[str(msg['chat']['id'])][msg['text']])
+	
+	except telepot.exception.TelegramError:
+		BOT.sendMessage(msg['chat']['id'],'You are not chatting with me. Please send me a message and try again')
 	except KeyError: 
 		print('keyerror')
+
+#sends help to user
+def send_help(msg):
+	message = """/taboo - starts a game of taboo\n
+				/scramble - starts a game of scramble\n
+				/type - starts a game of type \n
+				/running - shows the running game\n
+				/abortgame - aborts the running game\n
+				/togglegame - toggles games on or off\n
+				/points - shows user's points in current chat\n
+				/addcomm command:return - adds a custom command\n
+				/remcomm command - removes a custom command\n"""
+	try:
+		message += '-------\ncustom commands:'+json.dumps(COMMANDS[str(msg['chat']['id'])])
+	except KeyError:
+		pass
+
+	BOT.sendMessage(msg['from']['id'],message)
+	if msg['from']['id'] != msg['chat']['id']:
+		BOT.sendMessage(msg['chat']['id'],'Help has been sent in PM')
 
 #shows points of user
 def show_points(msg,send=True):
@@ -81,7 +132,7 @@ def show_points(msg,send=True):
 		user_points = 0
 	
 	if send:
-		BOT.sendMessage(msg['chat']['id'],msg['from']['first_name']+', your points are '+str(user_points))
+		BOT.sendMessage(msg['chat']['id'],msg['from']['first_name']+', you have '+str(user_points)+' points')
 
 #aborts running game
 def abort_game(msg):
@@ -135,7 +186,7 @@ def handle_games(msg):
 		elif GAMES_RUNNING[msg['chat']['id']]['solution'] == msg['text'].upper():
 			show_points(msg,False)
 			POINTS[str(msg['chat']['id'])][str(msg['from']['id'])] += 1
-			BOT.sendMessage(msg['chat']['id'], 'Correct, the solution was '+msg['text']+'\nYour current points are '+str(POINTS[str(msg['chat']['id'])][str(msg['from']['id'])]))
+			BOT.sendMessage(msg['chat']['id'], msg['from']['first_name']+'Correct, the solution was '+msg['text']+'\nYour current points are '+str(POINTS[str(msg['chat']['id'])][str(msg['from']['id'])]))
 			del GAMES_RUNNING[msg['chat']['id']]
 	except KeyError as err:
 		print(err)
