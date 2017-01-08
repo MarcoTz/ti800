@@ -18,6 +18,7 @@ TABOO_WORDS = dictionary['words']
 TABOO_TABOOS = {}
 POINTS = CONF['POINTS']
 COMMANDS = CONF['COMMANDS']
+CALLME = CONF['CALLME']
 
 f.close() 
  
@@ -66,6 +67,10 @@ def check_command(msg):
 			
 		if msg['text'] == '/help':
 			send_help(msg)
+
+		if msg['text'].split(' ')[0] == '/callme':
+			CALLME[str(msg['from']['id'])] = msg['text'].split(' ',1)[1]
+			BOT.sendMessage(msg['chat']['id'],msg['from']['first_name']+'I will now call you'+CALLME[msg['from']['id']])
 	
 		if msg['text'].split(' ')[0] == '/addcomm':	
 			try:
@@ -88,14 +93,24 @@ def check_command(msg):
 				BOT.sendMessage(msg['chat']['id'],'Command '+comm[1]+' has been deleted')
 			else:
 				BOT.sendMessage(msg['chat']['id'],'Not a command.')
-
-		if msg['text'] in COMMANDS[str(msg['chat']['id'])]:
-			BOT.sendMessage(msg['chat']['id'],COMMANDS[str(msg['chat']['id'])][msg['text']])
+		
+		for com in COMMANDS[str(msg['chat']['id'])]:
+			if com in msg['text']:
+				BOT.sendMessage(msg['chat']['id'],COMMANDS[str(msg['chat']['id'])][com])
 	
 	except telepot.exception.TelegramError:
 		BOT.sendMessage(msg['chat']['id'],'You are not chatting with me. Please send me a message and try again')
 	except KeyError: 
 		print('keyerror')
+
+#returns callme name for user
+def name(msg):	
+	try:
+		name = CALLME[str(msg['from']['id'])]
+	except IndexError:
+		name = msg['from']['first_name']
+	
+	return name
 
 #sends help to user
 def send_help(msg):
@@ -132,7 +147,7 @@ def show_points(msg,send=True):
 		user_points = 0
 	
 	if send:
-		BOT.sendMessage(msg['chat']['id'],msg['from']['first_name']+', you have '+str(user_points)+' points')
+			BOT.sendMessage(msg['chat']['id'],name(msg)+', you have '+str(user_points)+' points')
 
 #aborts running game
 def abort_game(msg):
@@ -186,7 +201,7 @@ def handle_games(msg):
 		elif GAMES_RUNNING[msg['chat']['id']]['solution'] == msg['text'].upper():
 			show_points(msg,False)
 			POINTS[str(msg['chat']['id'])][str(msg['from']['id'])] += 1
-			BOT.sendMessage(msg['chat']['id'], msg['from']['first_name']+'Correct, the solution was '+msg['text']+'\nYour current points are '+str(POINTS[str(msg['chat']['id'])][str(msg['from']['id'])]))
+			BOT.sendMessage(msg['chat']['id'], 'You win, '+name(msg)+', the solution was '+msg['text']+'\nYour current points are '+str(POINTS[str(msg['chat']['id'])][str(msg['from']['id'])]))
 			del GAMES_RUNNING[msg['chat']['id']]
 	except KeyError as err:
 		print(err)
