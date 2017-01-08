@@ -12,6 +12,7 @@ a telegram bot
 * /points shows points of user in current chat
 * /addcomm command:return adds a custom command
 * /remcomm command removes a custom command
+* /callme name changes what the bot calls you
 
 ###other repos used 
 * [telepot](https://github.com/nickoala/telepot/)

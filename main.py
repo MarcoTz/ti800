@@ -122,7 +122,8 @@ def send_help(msg):
 				/togglegame - toggles games on or off\n
 				/points - shows user's points in current chat\n
 				/addcomm command:return - adds a custom command\n
-				/remcomm command - removes a custom command\n"""
+				/remcomm command - removes a custom command\n
+				/callme name - changes the name the bot calls you\n"""
 	try:
 		message += '-------\ncustom commands:'+json.dumps(COMMANDS[str(msg['chat']['id'])])
 	except KeyError:
