@@ -12,7 +12,7 @@ dictionary = json.loads(df.read())
 GAME_COMMANDS = ('/scramble','/type','/taboo')
 GAMES_RUNNING={}
 GAMES_OFF = CONF['OFF'] 
-SCRAMBLE_WORDS = [item for item in dictionary['words'] if len(item)>4]
+SCRAMBLE_WORDS = [item for item in dictionary['words'] if len(item)>3 and len(item)<7]
 TYPE_WORDS = dictionary['words']
 TABOO_WORDS = dictionary['words']
 TABOO_TABOOS = {}
@@ -76,7 +76,7 @@ def check_command(msg):
 			try:
 				comm = msg['text'].split(' ',1)[1]
 				comm = comm.split(':')
-				print(comm[1])
+				
 				try:
 					COMMANDS[str(msg['chat']['id'])][comm[0]] = comm[1]
 				except KeyError:
@@ -105,11 +105,11 @@ def check_command(msg):
 
 #returns callme name for user
 def name(msg):	
+	name = ''
 	try:
 		name = CALLME[str(msg['from']['id'])]
-	except IndexError:
-		name = msg['from']['first_name']
-	
+	except KeyError:
+		return msg['from']['first_name']
 	return name
 
 #sends help to user
@@ -162,7 +162,7 @@ def game(msg,words,name):
 	taboo=[]
 
 	if name=='scramble':
-		word = ''.join(sorted(words[nr]))
+		word = ''.join(random.sample(words[nr],len(words[nr])))
 		message = 'Unscramble: '+word
 	elif name=='type':
 		message = 'Type: '+words[nr]
@@ -199,7 +199,7 @@ def handle_games(msg):
 				POINTS[str(msg['chat']['id'])][str(msg['from']['id'])] = 0
 			BOT.sendMessage(msg['chat']['id'],'TABOO WORD MENTIONED! ABORTING GAME\n You just lost 1 point\nYour current points are '+str(POINTS[str(msg['chat']['id'])][str(msg['from']['id'])]))	
 			del GAMES_RUNNING[msg['chat']['id']]
-		elif GAMES_RUNNING[msg['chat']['id']]['solution'] == msg['text'].upper():
+		elif GAMES_RUNNING[msg['chat']['id']]['solution'] == msg['text'].upper():	
 			show_points(msg,False)
 			POINTS[str(msg['chat']['id'])][str(msg['from']['id'])] += 1
 			BOT.sendMessage(msg['chat']['id'], 'You win, '+name(msg)+', the solution was '+msg['text']+'\nYour current points are '+str(POINTS[str(msg['chat']['id'])][str(msg['from']['id'])]))
