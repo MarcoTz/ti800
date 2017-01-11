@@ -20,6 +20,7 @@ TABOO_WORDS = dictionary['words']
 TABOO_TABOOS = {}
 POINTS = CONF['POINTS']
 COMMANDS = CONF['COMMANDS']
+COMMANDS2 = CONF['COMMANDS2']
 CALLME = CONF['CALLME']
 
 f.close() 
@@ -73,37 +74,81 @@ def check_command(msg):
 		if msg['text'].split(' ')[0] == '/callme':
 			CALLME[str(msg['from']['id'])] = msg['text'].split(' ',1)[1]
 			BOT.sendMessage(msg['chat']['id'],msg['from']['first_name']+',I will now call you '+CALLME[str(msg['from']['id'])])	
-	
-		if msg['text'].split(' ')[0] == '/addcomm':	
+		
+		if msg['text'].split(' ')[0] == '/addcom':
 			try:
 				comm = msg['text'].split(' ',1)[1]
 				comm = comm.split(':')
 				
-				try:
-					COMMANDS[str(msg['chat']['id'])][comm[0]] = comm[1]
-				except KeyError:
-					COMMANDS[str(msg['chat']['id'])] = {}
-					COMMANDS[str(msg['chat']['id'])][comm[0]] = comm[1]
-				BOT.sendMessage(msg['chat']['id'],'Added command '+comm[0]+':'+comm[1])
+				if comm[0] not in COMMANDS2[str(msg['chat']['id'])]:
+					try:
+						COMMANDS2[str(msg['chat']['id'])][comm[0]] = comm[1]
+					except KeyError:
+						COMMANDS2[str(msg['chat']['id'])] = {}
+						COMMANDS2[str(msg['chat']['id'])][comm[0]] = comm[1]
+					BOT.sendMessage(msg['chat']['id'],'Added command '+comm[0]+':'+comm[1])
+				else:
+					BOT.sendMessage(msg['chat']['id'],comm[0]+' - Command already exists. Try again with a differen name')
+			except IndexError:
+				BOT.sendMessage(msg['chat']['id'], 'Malformed command. Send /help for more information')
+			except KeyError:
+				COMMANDS2[str(msg['chat']['id'])] = {}
+
+		if msg['text'].split(' ') == '/remcom':
+			comm = msg['text'].split(' ')
+			try:
+				if comm[1] in COMMANDS2[str(msg['chat']['id'])]:
+					del COMMANDS2[str(msg['chat']['id'])][comm[1]]
+					BOT.sendMessage(msg['chat']['id'],'Command '+comm[1]+' has been deleted')
+				else:
+					BOT.sendMessage(msg['chat']['id'],'Not a command')
+			except IndexError:
+				BOT.sendMessage(msg['chat']['id'],'Malformed command. Try /help for more information')
+		try:
+			for com in COMMANDS2[str(msg['chat']['id'])]:
+				if com.upper() == msg['text'].upper():
+					BOT.sendMessage(msg['chat']['id'],COMMANDS2[str(msg['chat']['id'])][com])
+		except KeyError:
+			COMMANDS2[str(msg['chat']['id'])] = {}	
+
+		for com in COMMANDS[str(msg['chat']['id'])]:
+			if com.upper() in msg['text'].upper():
+				BOT.sendMessage(msg['chat']['id'],COMMANDS[str(msg['chat']['id'])][com])
+
+		if msg['text'].split(' ')[0] == '/addrep':	
+			try:
+				comm = msg['text'].split(' ',1)[1]
+				comm = comm.split(':')
+				if comm[0] not in COMMANDS[str(msg['chat']['id'])]:	
+					try:
+							COMMANDS[str(msg['chat']['id'])][comm[0]] = comm[1]
+					except KeyError:
+						COMMANDS[str(msg['chat']['id'])] = {}
+						COMMANDS[str(msg['chat']['id'])][comm[0]] = comm[1]
+					BOT.sendMessage(msg['chat']['id'],'Added command '+comm[0]+':'+comm[1])
+				else:
+					BOT.sendMessage(msg['chat']['id'],comm[0]+' - Command already exists. Try again with a different name')
 			except IndexError:
 				BOT.sendMessage(msg['chat']['id'],'Malformed command. Send /help for more information')
+			except KeyError:
+				COMMANDS[str(msg['chat']['id'])] = {}
 
-		if msg['text'].split(' ')[0] == '/remcomm':
+		if msg['text'].split(' ')[0] == '/remrep':
 			comm = msg['text'].split(' ')
-			if comm[1] in COMMANDS[str(msg['chat']['id'])]:
-				del COMMANDS[str(msg['chat']['id'])][comm[1]]
-				BOT.sendMessage(msg['chat']['id'],'Command '+comm[1]+' has been deleted')
-			else:
-				BOT.sendMessage(msg['chat']['id'],'Not a command.')
-		
-		for com in COMMANDS[str(msg['chat']['id'])]:
-			if com in msg['text']:
-				BOT.sendMessage(msg['chat']['id'],COMMANDS[str(msg['chat']['id'])][com])
-	
-	except telepot.exception.TelegramError:
+			try:	
+				if comm[1] in COMMANDS[str(msg['chat']['id'])]:
+					del COMMANDS[str(msg['chat']['id'])][comm[1]]
+					BOT.sendMessage(msg['chat']['id'],'Command '+comm[1]+' has been deleted')
+				else:
+					BOT.sendMessage(msg['chat']['id'],'Not a command.')
+			except IndexError:
+				BOT.sendMessage(msg['chat']['id'],'Malformed command. Try /help for more information')
+			
+	except telepot.exception.TelegramError as e:
+		print(e)
 		BOT.sendMessage(msg['chat']['id'],'You are not chatting with me. Please send me a message and try again')
-	except KeyError: 
-		print('keyerror')
+	except KeyError as e: 
+		print(e)
 
 #returns callme name for user
 def name(msg):	
@@ -123,15 +168,22 @@ def send_help(msg):
 /abortgame - aborts the running game\n
 /togglegame - toggles games on or off\n
 /points - shows user\'s points in current chat\n
-/addcomm command:return - adds a custom command\n
-/remcomm command - removes a custom command\n
+/addrep command:return - adds a custom command\n
+/remrep command - removes a custom command\n
 /callme name - changes the name the bot calls you\n
 -------\ncustom commands:\n\n"""
 	try:
-	    for comm in COMMANDS[str(msg['chat']['id'])]:	
-                message += comm+' - '+COMMANDS[str(msg['chat']['id'])][comm]+'\n'
+		for comm in COMMANDS2[str(msg['chat']['id'])]:	
+			message += comm+' - '+COMMANDS2[str(msg['chat']['id'])][comm]+'\n'
 	except KeyError:
-		message += 'no custom commands. try using /addcomm'
+		message += 'no custom commands. Try using /addcom\n'
+	message+='-------\n replies\n\n'
+
+	try:
+		for comm in COMMANDS[str(msg['chat']['id'])]:
+			message+=comm+' - '+COMMANDS[str(msg['chat']['id'])][comm]+'\n'
+	except KeyError:
+		message += 'no replies. Try using /addrep'
 
 	BOT.sendMessage(msg['from']['id'],message)
 	if msg['from']['id'] != msg['chat']['id']:
@@ -175,7 +227,7 @@ def game(msg,words,game_name):
 			BOT.sendMessage(msg['chat']['id'],'Taboo can only be played in groups, sorry pal.')
 			return
 
-		message = name(msg)+',the taboo has been sent in PM'
+		message = name(msg)+', the taboo has been sent in PM'
 		BOT.sendMessage(msg['from']['id'],'The word to guess is: '+words[nr])
 		taboo = []	
 		#taboo = TABOO_TABOOS[words[nr]]
@@ -196,7 +248,7 @@ def show_game(msg):
 #checks running games
 def handle_games(msg):
 	try:
-		if msg['from']['id'] == GAMES_RUNNING[str(msg['chat']['id'])]['player'] and msg['text'] in GAMES_RUNNING[str(msg['chat']['id'])]['taboo']:
+		if msg['from']['id'] == GAMES_RUNNING[str(msg['chat']['id'])]['player'] and msg['text'] in GAMES_RUNNING[str(msg['chat']['id'])]['taboo'] or GAMES_RUNNING[str(msg['chat']['id'])]['solution'] in msg['text']:
 			show_points(msg,False)
 			POINTS[str(msg['chat']['id'])][str(msg['from']['id'])] -= 1
 			if POINTS[str(msg['chat']['id'])][str(msg['from']['id'])] < 0:
