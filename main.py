@@ -1,6 +1,8 @@
 import telepot 
 import json 
 import random
+import time
+import _thread as thread
 
 random.seed()
 f = open('conf.cfg','r')
@@ -10,7 +12,7 @@ BOT = telepot.Bot(CONF['TOKEN'])
 df = open('words.txt','r')
 dictionary = json.loads(df.read())
 GAME_COMMANDS = ('/scramble','/type','/taboo')
-GAMES_RUNNING={}
+GAMES_RUNNING=CONF['GAMES']
 GAMES_OFF = CONF['OFF'] 
 SCRAMBLE_WORDS = [item for item in dictionary['words'] if len(item)>3 and len(item)<7]
 TYPE_WORDS = dictionary['words']
@@ -34,13 +36,13 @@ def check_command(msg):
 		if msg['chat']['id'] not in GAMES_OFF: 
 			
 			if msg['text'] == '/abortgame':
-				if msg['chat']['id'] in GAMES_RUNNING:
-					BOT.sendMessage(msg['chat']['id'], 'Aborted game, the solution was '+GAMES_RUNNING[msg['chat']['id']]['solution'])
+				if str(msg['chat']['id']) in GAMES_RUNNING:
+					BOT.sendMessage(msg['chat']['id'], 'Aborted game, the solution was '+GAMES_RUNNING[str(msg['chat']['id'])]['solution'])
 					abort_game(msg)
 				else:
 					BOT.sendMessage(msg['chat']['id'], 'Currently no running game')
-			elif msg['text'] in GAME_COMMANDS and msg['chat']['id'] in GAMES_RUNNING:
-				BOT.sendMessage(msg['chat']['id'],'Already running a game',None,None,None,GAMES_RUNNING[msg['chat']['id']]['message_id'])
+			elif msg['text'] in GAME_COMMANDS and str(msg['chat']['id']) in GAMES_RUNNING:
+				BOT.sendMessage(msg['chat']['id'],'Already running a game',None,None,None,GAMES_RUNNING[str(msg['chat']['id'])]['message_id'])
 			elif msg['text'] == '/scramble':
 				game(msg,SCRAMBLE_WORDS,'scramble')
 			elif msg['text'] == '/type':
@@ -53,7 +55,7 @@ def check_command(msg):
 				BOT.sendMessage(msg['chat']['id'], 'Games have been turned off in this chat')
 				GAMES_OFF.append(msg['chat']['id'])
 				abort_game(msg)
-			elif msg['chat']['id'] in GAMES_RUNNING: 
+			elif str(msg['chat']['id']) in GAMES_RUNNING: 
 				handle_games(msg)
 		else:
 			if msg['text'] in GAME_COMMANDS or msg['text'] == '/running' or msg['text'] == '/abortgame':
@@ -70,7 +72,7 @@ def check_command(msg):
 
 		if msg['text'].split(' ')[0] == '/callme':
 			CALLME[str(msg['from']['id'])] = msg['text'].split(' ',1)[1]
-			BOT.sendMessage(msg['chat']['id'],msg['from']['first_name']+',I will now call you '+CALLME[str(msg['from']['id'])])
+			BOT.sendMessage(msg['chat']['id'],msg['from']['first_name']+',I will now call you '+CALLME[str(msg['from']['id'])])	
 	
 		if msg['text'].split(' ')[0] == '/addcomm':	
 			try:
@@ -115,19 +117,21 @@ def name(msg):
 #sends help to user
 def send_help(msg):
 	message = """/taboo - starts a game of taboo\n
-				/scramble - starts a game of scramble\n
-				/type - starts a game of type \n
-				/running - shows the running game\n
-				/abortgame - aborts the running game\n
-				/togglegame - toggles games on or off\n
-				/points - shows user's points in current chat\n
-				/addcomm command:return - adds a custom command\n
-				/remcomm command - removes a custom command\n
-				/callme name - changes the name the bot calls you\n"""
+/scramble - starts a game of scramble\n
+/type - starts a game of type \n
+/running - shows the running game\n
+/abortgame - aborts the running game\n
+/togglegame - toggles games on or off\n
+/points - shows user\'s points in current chat\n
+/addcomm command:return - adds a custom command\n
+/remcomm command - removes a custom command\n
+/callme name - changes the name the bot calls you\n
+-------\ncustom commands:\n\n"""
 	try:
-		message += '-------\ncustom commands:'+json.dumps(COMMANDS[str(msg['chat']['id'])])
+	    for comm in COMMANDS[str(msg['chat']['id'])]:	
+                message += comm+' - '+COMMANDS[str(msg['chat']['id'])][comm]+'\n'
 	except KeyError:
-		pass
+		message += 'no custom commands. try using /addcomm'
 
 	BOT.sendMessage(msg['from']['id'],message)
 	if msg['from']['id'] != msg['chat']['id']:
@@ -152,63 +156,80 @@ def show_points(msg,send=True):
 
 #aborts running game
 def abort_game(msg):
-	if msg['chat']['id'] in GAMES_RUNNING:
-		del GAMES_RUNNING[msg['chat']['id']]
+	if str(msg['chat']['id']) in GAMES_RUNNING:
+		del GAMES_RUNNING[str(msg['chat']['id'])]
 
 #starts a game of scramble or type
-def game(msg,words,name):
+def game(msg,words,game_name):
 	nr=random.randint(0,len(words)-1)	
 	message=''
 	taboo=[]
 
-	if name=='scramble':
+	if game_name=='scramble':
 		word = ''.join(random.sample(words[nr],len(words[nr])))
 		message = 'Unscramble: '+word
-	elif name=='type':
+	elif game_name=='type':
 		message = 'Type: '+words[nr]
-	elif name=='taboo':
+	elif game_name=='taboo':
 		if msg['chat']['type'] == 'private':
 			BOT.sendMessage(msg['chat']['id'],'Taboo can only be played in groups, sorry pal.')
 			return
 
-		message = 'The taboo has been sent in PM'
+		message = name(msg)+',the taboo has been sent in PM'
 		BOT.sendMessage(msg['from']['id'],'The word to guess is: '+words[nr])
 		taboo = []	
 		#taboo = TABOO_TABOOS[words[nr]]
 		taboo.append(words[nr])
 	
-	GAMES_RUNNING[msg['chat']['id']] = BOT.sendMessage(msg['chat']['id'],message)
-	GAMES_RUNNING[msg['chat']['id']]['solution'] = words[nr].upper()
-	GAMES_RUNNING[msg['chat']['id']]['taboo'] = taboo
-	GAMES_RUNNING[msg['chat']['id']]['player'] = msg['from']['id']
+	GAMES_RUNNING[str(msg['chat']['id'])] = BOT.sendMessage(msg['chat']['id'],message)
+	GAMES_RUNNING[str(msg['chat']['id'])]['solution'] = words[nr].upper()
+	GAMES_RUNNING[str(msg['chat']['id'])]['taboo'] = taboo
+	GAMES_RUNNING[str(msg['chat']['id'])]['player'] = msg['from']['id']
 
 #shows the game running in the chat
 def show_game(msg):
-	if msg['chat']['id'] in GAMES_RUNNING:
-		BOT.forwardMessage(msg['chat']['id'],msg['chat']['id'],GAMES_RUNNING[msg['chat']['id']]['message_id'])
+	if str(msg['chat']['id']) in GAMES_RUNNING:
+		BOT.forwardMessage(msg['chat']['id'],msg['chat']['id'],GAMES_RUNNING[str(msg['chat']['id'])]['message_id'])
 	else: 
 		BOT.sendMessage(msg['chat']['id'],'Currently no running game')
 
 #checks running games
 def handle_games(msg):
 	try:
-		if msg['from']['id'] == GAMES_RUNNING[msg['chat']['id']]['player'] and msg['text'] in GAMES_RUNNING[msg['chat']['id']]['taboo']:
+		if msg['from']['id'] == GAMES_RUNNING[str(msg['chat']['id'])]['player'] and msg['text'] in GAMES_RUNNING[str(msg['chat']['id'])]['taboo']:
 			show_points(msg,False)
 			POINTS[str(msg['chat']['id'])][str(msg['from']['id'])] -= 1
 			if POINTS[str(msg['chat']['id'])][str(msg['from']['id'])] < 0:
 				POINTS[str(msg['chat']['id'])][str(msg['from']['id'])] = 0
 			BOT.sendMessage(msg['chat']['id'],'TABOO WORD MENTIONED! ABORTING GAME\n You just lost 1 point\nYour current points are '+str(POINTS[str(msg['chat']['id'])][str(msg['from']['id'])]))	
-			del GAMES_RUNNING[msg['chat']['id']]
-		elif GAMES_RUNNING[msg['chat']['id']]['solution'] == msg['text'].upper():	
+			del GAMES_RUNNING[str(msg['chat']['id'])]
+		elif GAMES_RUNNING[str(msg['chat']['id'])]['solution'] == msg['text'].upper():	
 			show_points(msg,False)
 			POINTS[str(msg['chat']['id'])][str(msg['from']['id'])] += 1
 			BOT.sendMessage(msg['chat']['id'], 'You win, '+name(msg)+', the solution was '+msg['text']+'\nYour current points are '+str(POINTS[str(msg['chat']['id'])][str(msg['from']['id'])]))
-			del GAMES_RUNNING[msg['chat']['id']]
+			del GAMES_RUNNING[str(msg['chat']['id'])]
 	except KeyError as err:
 		print(err)
 
+
+
+
+def save():
+	f = open('conf.cfg','w')
+	f.write(json.dumps(CONF))
+	f.close()
+
+def save_background():
+	start = time.time()
+	while True:
+		if time.time()-start >= 600000:
+			save()
+			start=time.time()
+			print('saved config')
+
 BOT.message_loop(check_command)
+thread.start_new_thread(save_background,())
+print('bot running')
 input('')
-f = open('conf.cfg','w')
-f.write(json.dumps(CONF))
-f.close()
+save()
+
