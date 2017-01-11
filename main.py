@@ -104,12 +104,24 @@ def check_command(msg):
 					BOT.sendMessage(msg['chat']['id'],'Not a command')
 			except IndexError:
 				BOT.sendMessage(msg['chat']['id'],'Malformed command. Try /help for more information')
+		
 		try:
 			for com in COMMANDS2[str(msg['chat']['id'])]:
 				if com.upper() == msg['text'].upper():
 					BOT.sendMessage(msg['chat']['id'],COMMANDS2[str(msg['chat']['id'])][com])
 		except KeyError:
 			COMMANDS2[str(msg['chat']['id'])] = {}	
+		
+		if msg['text'].split(' ')[0] == '/remrep':
+			comm = msg['text'].split(' ')
+			try:	
+				if comm[1] in COMMANDS[str(msg['chat']['id'])]:
+					del COMMANDS[str(msg['chat']['id'])][comm[1]]
+					BOT.sendMessage(msg['chat']['id'],'Command '+comm[1]+' has been deleted')
+				else:
+					BOT.sendMessage(msg['chat']['id'],'Not a command.')
+			except IndexError:
+				BOT.sendMessage(msg['chat']['id'],'Malformed command. Try /help for more information')
 
 		for com in COMMANDS[str(msg['chat']['id'])]:
 			if com.upper() in msg['text'].upper():
@@ -133,17 +145,7 @@ def check_command(msg):
 			except KeyError:
 				COMMANDS[str(msg['chat']['id'])] = {}
 
-		if msg['text'].split(' ')[0] == '/remrep':
-			comm = msg['text'].split(' ')
-			try:	
-				if comm[1] in COMMANDS[str(msg['chat']['id'])]:
-					del COMMANDS[str(msg['chat']['id'])][comm[1]]
-					BOT.sendMessage(msg['chat']['id'],'Command '+comm[1]+' has been deleted')
-				else:
-					BOT.sendMessage(msg['chat']['id'],'Not a command.')
-			except IndexError:
-				BOT.sendMessage(msg['chat']['id'],'Malformed command. Try /help for more information')
-			
+					
 	except telepot.exception.TelegramError as e:
 		print(e)
 		BOT.sendMessage(msg['chat']['id'],'You are not chatting with me. Please send me a message and try again')
