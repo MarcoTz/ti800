@@ -78,7 +78,7 @@ def check_command(msg):
 		if msg['text'].split(' ')[0] == '/addcom':
 			try:
 				comm = msg['text'].split(' ',1)[1]
-				comm = comm.split(':')
+				comm = comm.split(':',1)
 				
 				if comm[0] not in COMMANDS2[str(msg['chat']['id'])]:
 					try:
@@ -130,7 +130,7 @@ def check_command(msg):
 		if msg['text'].split(' ')[0] == '/addrep':	
 			try:
 				comm = msg['text'].split(' ',1)[1]
-				comm = comm.split(':')
+				comm = comm.split(':',1)
 				if comm[0] not in COMMANDS[str(msg['chat']['id'])]:	
 					try:
 							COMMANDS[str(msg['chat']['id'])][comm[0]] = comm[1]
