@@ -79,8 +79,9 @@ def check_command(msg):
 			try:
 				comm = msg['text'].split(' ',1)[1]
 				comm = comm.split(':',1)
-				
-				if comm[0] not in COMMANDS2[str(msg['chat']['id'])]:
+				if comm[1] == '':
+					raise IndexError('no empty commands')
+				elif comm[0] not in COMMANDS2[str(msg['chat']['id'])]:
 					try:
 						COMMANDS2[str(msg['chat']['id'])][comm[0]] = comm[1]
 					except KeyError:
@@ -131,7 +132,9 @@ def check_command(msg):
 			try:
 				comm = msg['text'].split(' ',1)[1]
 				comm = comm.split(':',1)
-				if comm[0] not in COMMANDS[str(msg['chat']['id'])]:	
+				if comm[1] == '':
+					raise IndexError('no empty commands')
+				elif comm[0] not in COMMANDS[str(msg['chat']['id'])]:	
 					try:
 							COMMANDS[str(msg['chat']['id'])][comm[0]] = comm[1]
 					except KeyError:
@@ -179,6 +182,7 @@ def send_help(msg):
 			message += comm+' - '+COMMANDS2[str(msg['chat']['id'])][comm]+'\n'
 	except KeyError:
 		message += 'no custom commands. Try using /addcom\n'
+
 	message+='-------\n replies\n\n'
 
 	try:
@@ -186,7 +190,7 @@ def send_help(msg):
 			message+=comm+' - '+COMMANDS[str(msg['chat']['id'])][comm]+'\n'
 	except KeyError:
 		message += 'no replies. Try using /addrep'
-
+	
 	BOT.sendMessage(msg['from']['id'],message)
 	if msg['from']['id'] != msg['chat']['id']:
 		BOT.sendMessage(msg['chat']['id'],'Help has been sent in PM')
