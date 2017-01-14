@@ -103,10 +103,10 @@ def check_command(msg):
 			COMMANDS[str(msg['chat']['id'])] = {}	
 
 
-		if msg['text'].split(' ')[0] == '/addrep':		
+		if msg['text'].split(' ')[0] == '/addcom':		
 			add(msg,COMMANDS,'command')
 					
-		if msg['text'].split(' ')[0] == '/addcom':		
+		if msg['text'].split(' ')[0] == '/addrep':		
 			add(msg,REPLIES,'reply')	
 					
 	except telepot.exception.TelegramError as e:
