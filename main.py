@@ -81,6 +81,13 @@ def check_command(msg):
 			CALLME[str(msg['from']['id'])] = msg['text'].split(' ',1)[1]
 			BOT.sendMessage(msg['chat']['id'],msg['from']['first_name']+',I will now call you '+CALLME[str(msg['from']['id'])])	
 		
+		
+		if msg['text'].split(' ')[0] == '/remcom':
+			remove(msg,COMMANDS)		
+				
+		if msg['text'].split(' ')[0] == '/remrep':
+			remove(msg,REPLIES)
+			
 		try:
 			for com in REPLIES[str(msg['chat']['id'])]:
 				if com in msg['text'].upper():
@@ -96,74 +103,51 @@ def check_command(msg):
 			COMMANDS[str(msg['chat']['id'])] = {}	
 
 
-		if msg['text'].split(' ') == '/remcom':
-			comm = msg['text'].split(' ')
-			try:
-				if comm[1] in COMMANDS[str(msg['chat']['id'])]:
-					del COMMANDS[str(msg['chat']['id'])][comm[1]]
-					BOT.sendMessage(msg['chat']['id'],'Command '+comm[1]+' has been deleted')
-				else:
-					BOT.sendMessage(msg['chat']['id'],'Not a command')
-			except IndexError:
-				BOT.sendMessage(msg['chat']['id'],'Malformed command. Try /help for more information')
-		
-				
-		if msg['text'].split(' ')[0] == '/remrep':
-			comm = msg['text'].split(' ')
-			try:	
-				if comm[1] in REPLIES[str(msg['chat']['id'])]:
-					del REPLIES[str(msg['chat']['id'])][comm[1]]
-					BOT.sendMessage(msg['chat']['id'],'Reply '+comm[1]+' has been deleted')
-				else:
-					BOT.sendMessage(msg['chat']['id'],'Not a reply.')
-			except IndexError:
-				BOT.sendMessage(msg['chat']['id'],'Malformed command. Try /help for more information')
-		
-
 		if msg['text'].split(' ')[0] == '/addrep':		
-			try:
-				comm = msg['text'].split(' ',1)[1]
-				comm = comm.split(':',1)
-				if comm[1] == '':
-					raise IndexError('no empty replies')
-
-				try:	
-					if comm[0].upper() not in REPLIES[str(msg['chat']['id'])]:		
-						REPLIES[str(msg['chat']['id'])][comm[0].upper()] = comm[1]
-					else:
-						BOT.sendMessage(msg['chat']['id'],comm[0]+' - Reply already exists. Try again with a different name')
-				except KeyError:
-					REPLIES[str(msg['chat']['id'])] = {}
-					REPLIES[str(msg['chat']['id'])][comm[0].upper()] = comm[1]
-				BOT.sendMessage(msg['chat']['id'],'Added reply '+comm[0])
-			except IndexError:
-				BOT.sendMessage(msg['chat']['id'],'Malformed command. Send /help for more information')	
-		
+			add(msg,COMMANDS,'command')
+					
 		if msg['text'].split(' ')[0] == '/addcom':		
-			try:
-				comm = msg['text'].split(' ',1)[1]
-				comm = comm.split(':',1)
-				if comm[1] == '':
-					raise IndexError('no empty commands')
-
-				try:	
-					if comm[0].upper() not in COMMANDS[str(msg['chat']['id'])]:		
-						COMMANDS[str(msg['chat']['id'])][comm[0].upper()] = comm[1]
-					else:
-						BOT.sendMessage(msg['chat']['id'],comm[0]+' - command already exists. Try again with a different name')
-				except KeyError:
-					REPLIES[str(msg['chat']['id'])] = {}
-					REPLIES[str(msg['chat']['id'])][comm[0].upper()] = comm[1]
-				BOT.sendMessage(msg['chat']['id'],'Added command '+comm[0])
-			except IndexError:
-				BOT.sendMessage(msg['chat']['id'],'Malformed command. Send /help for more information')		
-
+			add(msg,REPLIES,'reply')	
 					
 	except telepot.exception.TelegramError as e:
 		print(e)
 		BOT.sendMessage(msg['chat']['id'],'You are not chatting with me. Please send me a message and try again')
-	#except KeyError as e: 
-	#	print(e)
+	except KeyError as e: 
+		print(e)
+
+#adds a command or reply
+def add(msg,dic,name):
+	try:
+		comm = msg['text'].split(' ',1)[1]
+		comm = comm.split(':',1)
+		if comm[1] == '':
+			raise IndexError('no empty'+name)
+
+		try:	
+			if comm[0].upper() not in dic[str(msg['chat']['id'])]:		
+				REPLIES[str(msg['chat']['id'])][comm[0].upper()] = comm[1]
+			else:
+				BOT.sendMessage(msg['chat']['id'],comm[0]+' - '+name+' already exists. Try again with a different name')
+		except KeyError:
+			dic[str(msg['chat']['id'])] = {}
+			dic[str(msg['chat']['id'])][comm[0].upper()] = comm[1]
+		BOT.sendMessage(msg['chat']['id'],'Added '+name+': '+comm[0])
+	except IndexError:
+		BOT.sendMessage(msg['chat']['id'],'Malformed command. Send /help for more information')	
+
+
+#removes a command or reply
+def remove(msg, dic):
+	comm = msg['text'].split(' ',1)
+	try:	
+		if comm[1].upper() in dic[str(msg['chat']['id'])]:
+			del dic[str(msg['chat']['id'])][comm[1].upper()]
+			BOT.sendMessage(msg['chat']['id'],'Reply '+comm[1]+' has been deleted')
+		else:
+			BOT.sendMessage(msg['chat']['id'],'Not a reply.')
+	except IndexError:
+		BOT.sendMessage(msg['chat']['id'],'Malformed command. Try /help for more information')
+
 
 #returns callme name for user
 def name(msg):	
@@ -199,7 +183,7 @@ def send_comm(msg):
 	
 	try:
 		for com in COMMANDS[str(msg['chat']['id'])]:
-			message+=COMMANDS[str(msg['chat']['id'])][com]+'\n'
+			message+=com+'\n'
 		if len(COMMANDS[str(msg['chat']['id'])])==0:
 			message+='no custom commands'
 	except KeyError:
@@ -216,7 +200,7 @@ def send_reps(msg):
 	
 	try:
 		for com in REPLIES[str(msg['chat']['id'])]:
-			message+=REPLIES[str(msg['chat']['id'])][com]+'\n'
+			message+=com+'\n'
 		if len(REPLIES[str(msg['chat']['id'])])==0:
 			message+='no custom replies'
 	except KeyError:
