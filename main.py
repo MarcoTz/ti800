@@ -11,7 +11,7 @@ BOT = telepot.Bot(CONF['TOKEN'])
 
 df = open('words.txt','r')
 dictionary = json.loads(df.read())
-GAME_COMMANDS = ('/scramble','/type','/taboo')
+GAME_REPLIES = ('/scramble','/type','/taboo')
 GAMES_RUNNING=CONF['GAMES']
 GAMES_OFF = CONF['OFF'] 
 SCRAMBLE_WORDS = [item for item in dictionary['words'] if len(item)>3 and len(item)<7]
@@ -19,8 +19,8 @@ TYPE_WORDS = dictionary['words']
 TABOO_WORDS = dictionary['words']
 TABOO_TABOOS = {}
 POINTS = CONF['POINTS']
+REPLIES = CONF['REPLIES']
 COMMANDS = CONF['COMMANDS']
-COMMANDS2 = CONF['COMMANDS2']
 CALLME = CONF['CALLME']
 
 f.close() 
@@ -42,7 +42,7 @@ def check_command(msg):
 					abort_game(msg)
 				else:
 					BOT.sendMessage(msg['chat']['id'], 'Currently no running game')
-			elif msg['text'] in GAME_COMMANDS and str(msg['chat']['id']) in GAMES_RUNNING:
+			elif msg['text'] in GAME_REPLIES and str(msg['chat']['id']) in GAMES_RUNNING:
 				BOT.sendMessage(msg['chat']['id'],'Already running a game',None,None,None,GAMES_RUNNING[str(msg['chat']['id'])]['message_id'])
 			elif msg['text'] == '/scramble':
 				game(msg,SCRAMBLE_WORDS,'scramble')
@@ -59,7 +59,7 @@ def check_command(msg):
 			elif str(msg['chat']['id']) in GAMES_RUNNING: 
 				handle_games(msg)
 		else:
-			if msg['text'] in GAME_COMMANDS or msg['text'] == '/running' or msg['text'] == '/abortgame':
+			if msg['text'] in GAME_REPLIES or msg['text'] == '/running' or msg['text'] == '/abortgame':
 				BOT.sendMessage(msg['chat']['id'], 'Games turned off in this chat.\nSend /togglegames to turn on')
 			elif msg['text'] == '/togglegames':
 				BOT.sendMessage(msg['chat']['id'],'Games have been turned on in this chat')
@@ -71,6 +71,12 @@ def check_command(msg):
 		if msg['text'] == '/help':
 			send_help(msg)
 
+		if msg['text'] == '/customcom':
+			send_comm(msg)
+
+		if msg['text'] == '/customrep':
+			send_reps(msg)
+
 		if msg['text'].split(' ')[0] == '/callme':
 			CALLME[str(msg['from']['id'])] = msg['text'].split(' ',1)[1]
 			BOT.sendMessage(msg['chat']['id'],msg['from']['first_name']+',I will now call you '+CALLME[str(msg['from']['id'])])	
@@ -81,25 +87,25 @@ def check_command(msg):
 				comm = comm.split(':',1)
 				if comm[1] == '':
 					raise IndexError('no empty commands')
-				elif comm[0] not in COMMANDS2[str(msg['chat']['id'])]:
+				elif comm[0] not in COMMANDS[str(msg['chat']['id'])]:
 					try:
-						COMMANDS2[str(msg['chat']['id'])][comm[0]] = comm[1]
+						COMMANDS[str(msg['chat']['id'])][comm[0]] = comm[1]
 					except KeyError:
-						COMMANDS2[str(msg['chat']['id'])] = {}
-						COMMANDS2[str(msg['chat']['id'])][comm[0]] = comm[1]
-					BOT.sendMessage(msg['chat']['id'],'Added command '+comm[0]+':'+comm[1])
+						COMMANDS[str(msg['chat']['id'])] = {}
+						COMMANDS[str(msg['chat']['id'])][comm[0]] = comm[1]
+					BOT.sendMessage(msg['chat']['id'],'Added command '+comm[0])
 				else:
 					BOT.sendMessage(msg['chat']['id'],comm[0]+' - Command already exists. Try again with a differen name')
 			except IndexError:
 				BOT.sendMessage(msg['chat']['id'], 'Malformed command. Send /help for more information')
 			except KeyError:
-				COMMANDS2[str(msg['chat']['id'])] = {}
+				COMMANDS[str(msg['chat']['id'])] = {}
 
 		if msg['text'].split(' ') == '/remcom':
 			comm = msg['text'].split(' ')
 			try:
-				if comm[1] in COMMANDS2[str(msg['chat']['id'])]:
-					del COMMANDS2[str(msg['chat']['id'])][comm[1]]
+				if comm[1] in COMMANDS[str(msg['chat']['id'])]:
+					del COMMANDS[str(msg['chat']['id'])][comm[1]]
 					BOT.sendMessage(msg['chat']['id'],'Command '+comm[1]+' has been deleted')
 				else:
 					BOT.sendMessage(msg['chat']['id'],'Not a command')
@@ -107,46 +113,48 @@ def check_command(msg):
 				BOT.sendMessage(msg['chat']['id'],'Malformed command. Try /help for more information')
 		
 		try:
-			for com in COMMANDS2[str(msg['chat']['id'])]:
+			for com in COMMANDS[str(msg['chat']['id'])]:
 				if com.upper() == msg['text'].upper():
-					BOT.sendMessage(msg['chat']['id'],COMMANDS2[str(msg['chat']['id'])][com])
+					BOT.sendMessage(msg['chat']['id'],COMMANDS[str(msg['chat']['id'])][com])
 		except KeyError:
-			COMMANDS2[str(msg['chat']['id'])] = {}	
+			COMMANDS[str(msg['chat']['id'])] = {}	
 		
 		if msg['text'].split(' ')[0] == '/remrep':
 			comm = msg['text'].split(' ')
 			try:	
-				if comm[1] in COMMANDS[str(msg['chat']['id'])]:
-					del COMMANDS[str(msg['chat']['id'])][comm[1]]
-					BOT.sendMessage(msg['chat']['id'],'Command '+comm[1]+' has been deleted')
+				if comm[1] in REPLIES[str(msg['chat']['id'])]:
+					del REPLIES[str(msg['chat']['id'])][comm[1]]
+					BOT.sendMessage(msg['chat']['id'],'Reply '+comm[1]+' has been deleted')
 				else:
-					BOT.sendMessage(msg['chat']['id'],'Not a command.')
+					BOT.sendMessage(msg['chat']['id'],'Not a reply.')
 			except IndexError:
 				BOT.sendMessage(msg['chat']['id'],'Malformed command. Try /help for more information')
 
-		for com in COMMANDS[str(msg['chat']['id'])]:
+		for com in REPLIES[str(msg['chat']['id'])]:
 			if com.upper() in msg['text'].upper():
-				BOT.sendMessage(msg['chat']['id'],COMMANDS[str(msg['chat']['id'])][com])
-
+				BOT.sendMessage(msg['chat']['id'],REPLIES[str(msg['chat']['id'])][com])
+		
+		print(msg['text'])
 		if msg['text'].split(' ')[0] == '/addrep':	
+			print('addrep')
 			try:
 				comm = msg['text'].split(' ',1)[1]
 				comm = comm.split(':',1)
 				if comm[1] == '':
-					raise IndexError('no empty commands')
-				elif comm[0] not in COMMANDS[str(msg['chat']['id'])]:	
+					raise IndexError('no empty replies')
+				elif comm[0] not in REPLIES[str(msg['chat']['id'])]:	
 					try:
-							COMMANDS[str(msg['chat']['id'])][comm[0]] = comm[1]
+							REPLIES[str(msg['chat']['id'])][comm[0]] = comm[1]
 					except KeyError:
-						COMMANDS[str(msg['chat']['id'])] = {}
-						COMMANDS[str(msg['chat']['id'])][comm[0]] = comm[1]
-					BOT.sendMessage(msg['chat']['id'],'Added command '+comm[0]+':'+comm[1])
+						REPLIES[str(msg['chat']['id'])] = {}
+						REPLIES[str(msg['chat']['id'])][comm[0]] = comm[1]
+					BOT.sendMessage(msg['chat']['id'],'Added reply '+comm[0])
 				else:
-					BOT.sendMessage(msg['chat']['id'],comm[0]+' - Command already exists. Try again with a different name')
+					BOT.sendMessage(msg['chat']['id'],comm[0]+' - Reply already exists. Try again with a different name')
 			except IndexError:
 				BOT.sendMessage(msg['chat']['id'],'Malformed command. Send /help for more information')
 			except KeyError:
-				COMMANDS[str(msg['chat']['id'])] = {}
+				REPLIES[str(msg['chat']['id'])] = {}
 
 					
 	except telepot.exception.TelegramError as e:
@@ -176,24 +184,46 @@ def send_help(msg):
 /addrep command:return - adds a custom command\n
 /remrep command - removes a custom command\n
 /callme name - changes the name the bot calls you\n
--------\ncustom commands:\n\n"""
-	try:
-		for comm in COMMANDS2[str(msg['chat']['id'])]:	
-			message += comm+' - '+COMMANDS2[str(msg['chat']['id'])][comm]+'\n'
-	except KeyError:
-		message += 'no custom commands. Try using /addcom\n'
-
-	message+='-------\n replies\n\n'
-
-	try:
-		for comm in COMMANDS[str(msg['chat']['id'])]:
-			message+=comm+' - '+COMMANDS[str(msg['chat']['id'])][comm]+'\n'
-	except KeyError:
-		message += 'no replies. Try using /addrep'
+/customcom - sends all custom commands\n
+/customrep - sends all custom replies"""
 	
 	BOT.sendMessage(msg['from']['id'],message)
 	if msg['from']['id'] != msg['chat']['id']:
 		BOT.sendMessage(msg['chat']['id'],'Help has been sent in PM')
+
+#sends all custom commands
+def send_comm(msg):
+	message = 'custom commands:\n'
+	
+	try:
+		for com in COMMANDS[str(msg['chat']['id'])]:
+			message+=COMMANDS[str(msg['chat']['id'])][com]+'\n'
+		if len(COMMANDS[str(msg['chat']['id'])])==0:
+			message+='no custom commands'
+	except KeyError:
+		message+='no custom commands'
+	
+	BOT.sendMessage(msg['from']['id'],message)
+	if msg['from']['id'] != msg['chat']['id']:
+		BOT.sendMessage(msg['chat']['id'],'Help has been sent in PM')
+
+
+#sends all replies
+def send_reps(msg):
+	message = 'custom replies:\n'
+	
+	try:
+		for com in REPLIES[str(msg['chat']['id'])]:
+			message+=REPLIES[str(msg['chat']['id'])][com]+'\n'
+		if len(REPLIES[str(msg['chat']['id'])])==0:
+			message+='no custom replies'
+	except KeyError:
+		message+='no custom replies'
+		
+	BOT.sendMessage(msg['from']['id'],message)
+	if msg['from']['id'] != msg['chat']['id']:
+		BOT.sendMessage(msg['chat']['id'],'Help has been sent in PM')
+
 
 #shows points of user
 def show_points(msg,send=True):
@@ -280,7 +310,7 @@ def save():
 def save_background():
 	start = time.time()
 	while True:
-		if time.time()-start >= 600000:
+		if time.time()-start >= 600:
 			save()
 			start=time.time()
 			print('saved config')
