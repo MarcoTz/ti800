@@ -83,10 +83,10 @@ def check_command(msg):
 		
 		
 		if msg['text'].split(' ')[0] == '/remcom':
-			remove(msg,COMMANDS)		
+			remove(msg,COMMANDS,'command')		
 				
 		if msg['text'].split(' ')[0] == '/remrep':
-			remove(msg,REPLIES)
+			remove(msg,REPLIES,'reply')
 			
 		try:
 			for com in REPLIES[str(msg['chat']['id'])]:
@@ -125,7 +125,7 @@ def add(msg,dic,name):
 
 		try:	
 			if comm[0].upper() not in dic[str(msg['chat']['id'])]:		
-				REPLIES[str(msg['chat']['id'])][comm[0].upper()] = comm[1]
+				dic[str(msg['chat']['id'])][comm[0].upper()] = comm[1]
 			else:
 				BOT.sendMessage(msg['chat']['id'],comm[0]+' - '+name+' already exists. Try again with a different name')
 		except KeyError:
@@ -137,14 +137,14 @@ def add(msg,dic,name):
 
 
 #removes a command or reply
-def remove(msg, dic):
+def remove(msg, dic,name):
 	comm = msg['text'].split(' ',1)
 	try:	
 		if comm[1].upper() in dic[str(msg['chat']['id'])]:
 			del dic[str(msg['chat']['id'])][comm[1].upper()]
-			BOT.sendMessage(msg['chat']['id'],'Reply '+comm[1]+' has been deleted')
+			BOT.sendMessage(msg['chat']['id'],name+' '+comm[1]+' has been deleted')
 		else:
-			BOT.sendMessage(msg['chat']['id'],'Not a reply.')
+			BOT.sendMessage(msg['chat']['id'],'Not a '+name+'.')
 	except IndexError:
 		BOT.sendMessage(msg['chat']['id'],'Malformed command. Try /help for more information')
 
