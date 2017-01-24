@@ -77,6 +77,13 @@ def check_command(msg):
 		if msg['text'] == '/customrep':
 			send_reps(msg)
 
+		if msg['text'].split(' ')[0] == '/report':
+			try:
+				BOT.sendMessage(CONF['ADMIN'],msg['text'].split(' ',1)[1])
+				BOT.sendMessage(msg['chat']['id'],'Report has been sent.')	
+			except IndexError:
+				BOT.sendMessage(msg['chat']['id'],'Malformed command. Send /help for more information.')
+
 		if msg['text'].split(' ')[0] == '/callme':
 			CALLME[str(msg['from']['id'])] = msg['text'].split(' ',1)[1]
 			BOT.sendMessage(msg['chat']['id'],msg['from']['first_name']+',I will now call you '+CALLME[str(msg['from']['id'])])	
@@ -149,7 +156,7 @@ def remove(msg, dic,name):
 		else:
 			BOT.sendMessage(msg['chat']['id'],'Not a '+name+'.')
 	except IndexError:
-		BOT.sendMessage(msg['chat']['id'],'Malformed command. Try /help for more information')
+		BOT.sendMessage(msg['chat']['id'],'Malformed command. Send /help for more information')
 
 
 #returns callme name for user
@@ -174,7 +181,8 @@ def send_help(msg):
 /remrep command - removes a custom command\n
 /callme name - changes the name the bot calls you\n
 /customcom - sends all custom commands\n
-/customrep - sends all custom replies"""
+/customrep - sends all custom replies
+/report message - sends a bug report to admin"""
 	
 	BOT.sendMessage(msg['from']['id'],message)
 	if msg['from']['id'] != msg['chat']['id']:
