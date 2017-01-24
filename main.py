@@ -181,7 +181,7 @@ def send_help(msg):
 /remrep command - removes a custom command\n
 /callme name - changes the name the bot calls you\n
 /customcom - sends all custom commands\n
-/customrep - sends all custom replies
+/customrep - sends all custom replies\n
 /report message - sends a bug report to admin"""
 	
 	BOT.sendMessage(msg['from']['id'],message)
