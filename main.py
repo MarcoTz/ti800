@@ -24,7 +24,7 @@ COMMANDS = CONF['COMMANDS']
 CALLME = CONF['CALLME']
 
 f.close() 
- 
+
 def check_command(msg):
 	try:
 		split = msg['text'].split('@')
@@ -247,6 +247,9 @@ def game(msg,words,game_name):
 		message = 'Unscramble: '+word
 	elif game_name=='type':
 		message = 'Type: '+words[nr]
+		TYPETIME = 0
+		thread.start_new_thread(type_time,())
+
 	elif game_name=='taboo':
 		if msg['chat']['type'] == 'private':
 			BOT.sendMessage(msg['chat']['id'],'Taboo can only be played in groups, sorry pal.')
@@ -284,12 +287,23 @@ def handle_games(msg):
 		elif GAMES_RUNNING[str(msg['chat']['id'])]['solution'] == msg['text'].upper():	
 			show_points(msg,False)
 			POINTS[str(msg['chat']['id'])][str(msg['from']['id'])] += 1
-			BOT.sendMessage(msg['chat']['id'], 'You win, '+name(msg)+', the solution was '+msg['text']+'\nYour current points are '+str(POINTS[str(msg['chat']['id'])][str(msg['from']['id'])]))
+			typemsg=''	
+			if GAMES_RUNNING[str(msg['chat']['id'])]['game'] == 'type':
+				global TYPETIME
+				typemsg = '\nYour time was: '+str(TYPETIME)+'ms'
+				TYPETIME = -1
+			BOT.sendMessage(msg['chat']['id'], 'You win, '+name(msg)+', the solution was '+msg['text']+typemsg+'\nYour current points are '+str(POINTS[str(msg['chat']['id'])][str(msg['from']['id'])]))
 			del GAMES_RUNNING[str(msg['chat']['id'])]
 	except KeyError as err:
 		print(err)
 
-
+def type_time():
+	global TYPETIME
+	TYPETIME=0	
+	start = int(round(time.time()*1000))
+	while TYPETIME!=-1:
+		TYPETIME=int(round(time.time()*1000))-start
+		#print(TYPETIME)
 
 
 def save():
