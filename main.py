@@ -262,6 +262,7 @@ def game(msg,words,game_name):
 	GAMES_RUNNING[str(msg['chat']['id'])]['solution'] = words[nr].upper()
 	GAMES_RUNNING[str(msg['chat']['id'])]['taboo'] = taboo
 	GAMES_RUNNING[str(msg['chat']['id'])]['player'] = msg['from']['id']
+	GAMES_RUNNING[str(msg['chat']['id'])]['game'] = game_name
 
 #shows the game running in the chat
 def show_game(msg):
@@ -273,7 +274,7 @@ def show_game(msg):
 #checks running games
 def handle_games(msg):
 	try:
-		if msg['from']['id'] == GAMES_RUNNING[str(msg['chat']['id'])]['player'] and msg['text'] in GAMES_RUNNING[str(msg['chat']['id'])]['taboo'] or GAMES_RUNNING[str(msg['chat']['id'])]['solution'] in msg['text']:
+		if msg['from']['id'] == GAMES_RUNNING[str(msg['chat']['id'])]['player'] and GAMES_RUNNING[str(msg['chat']['id'])]['game'] == 'taboo' and (msg['text'] in GAMES_RUNNING[str(msg['chat']['id'])]['taboo'] or GAMES_RUNNING[str(msg['chat']['id'])]['solution'] in msg['text']):
 			show_points(msg,False)
 			POINTS[str(msg['chat']['id'])][str(msg['from']['id'])] -= 1
 			if POINTS[str(msg['chat']['id'])][str(msg['from']['id'])] < 0:
