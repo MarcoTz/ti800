@@ -1,5 +1,5 @@
 # ti800
-a telegram bot
+a telegram bot, in order to use rename empty_conf.cfg to conf.cfg and insert your bot token where it says TOKENHERE
 
 ##Commands
 
